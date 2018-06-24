@@ -31,4 +31,4 @@ class iamusers:
         print(iamuseroutput)
 
 
-iamusers("AKIAIOFBQPAAKM2HVPOQ", "OT6GgqATmT04i7T1sKCDAidFVe8UyNFykwpXDTFl", "us-east-1")
+iamusers()
