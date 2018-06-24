@@ -5,30 +5,31 @@ To provide a list of all IAM users in AWS.
 import boto3
 import botocore
 
+try:
+    accesskey = input("Please enter access key: ")
+    secretkey = input("Please enter secret key: ")
+    region = input("Please enter region: ")
+except:
+    print("Please ensure your access key and secret key are correct")
 
-class iamusers:
-    try:
-        def __init__(self, accesskey, secretkey, region):
-            self.accesskey = accesskey
-            self.secretkey = secretkey
-            self.region = region
+if accesskey is None:
+    print("Please do not leave any keys null")
 
-            if self.accesskey is None:
-                print("No parameters are meant to be null. Please try again")
+else:
+    print("Continue with function")
 
-    except TypeError:
-        print("Wrong type. Please try putting in the specific access key, secret key, and region")
+def getusers():
 
-    def iamusers(self):
-
-        creds = boto3.client('iam',
-                             aws_access_key_id=self.accesskey,
-                             aws_secret_key=self.secretkey,
-                             region_name=self.region
+        keys = boto3.client('iam',
+                             aws_access_key_id=accesskey,
+                             aws_secret_access_key=secretkey,
+                             region_name=region
                              )
 
-        iamuseroutput = creds.list_users()
-        print(iamuseroutput)
+        users = keys.list_users()
+        print(users)
+def main():
+    getusers()
 
 
-iamusers()
+main()
