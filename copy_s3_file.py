@@ -2,7 +2,6 @@
 
 import boto3
 import sys
-import re
 
 global s3buckeyfile
 global s3bucketfile_key_location
