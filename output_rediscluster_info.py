@@ -17,7 +17,6 @@ make_redis_file(fileLocationOutput=input("Please enter a location for your file 
 def describe_redis_url(accessKey, secretKey, redisClusterID):
 
     try:
-
         redis = boto3.client('elasticache',
                             region_name='us-east-1',
                             aws_access_key_id=accessKey,
