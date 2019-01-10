@@ -36,7 +36,6 @@ def describe_redis_url(accessKey, secretKey, redisClusterID):
                     write_redis = f.write(string_redis)
                     append_redis = f.write(dict_string_redis)
 
-
     except ValueError:
         print('Please check your access key, secret key, and redis cluster ID to confirm all is correct')
 
