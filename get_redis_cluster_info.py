@@ -23,4 +23,5 @@ accessKey = sys.argv[2]
 secretKey = sys.argv[3]
 redisClusterID = sys.argv[4]
 
-describe_redis_url(region, accessKey, secretKey, redisClusterID)
+if __name__ == '__main__':
+    describe_redis_url(region, accessKey, secretKey, redisClusterID)
