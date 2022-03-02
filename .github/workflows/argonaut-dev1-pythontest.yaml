@@ -1,0 +1,83 @@
+
+name: "Cloud Buildpack Build"
+
+on:
+  push:
+    branches:
+      - master
+    tags:
+      - "v*" # Push events to matching v*, i.e. v1.0, v20.15.10
+  workflow_dispatch:
+
+jobs:
+  build:
+    
+    environment: 
+      name: dev1 
+    
+    runs-on: ubuntu-latest
+    name: Build and Push Img
+    steps:
+      - name: Get the version
+        id: get_version
+        run: echo ::set-output name=VERSION::${GITHUB_REF#refs/tags/}
+      - name: echo path
+        run: echo .art/argonaut-dev1-pythontest.yaml
+      - name: Fetch repo
+        uses: actions/checkout@v2
+      - name: Get Short SHA
+        id: get_sha
+        run: echo ::set-output name=SHA_SHORT::$(git rev-parse --short HEAD)
+      - name: Set up QEMU
+        uses: docker/setup-qemu-action@v1
+
+      - name: build-docker
+        run: |
+          wget https://github.com/buildpacks/pack/releases/download/v0.22.0/pack-v0.22.0-linux.tgz -O pack.tgz
+          tar xvf pack.tgz
+          rm pack.tgz
+          ./pack build ${{ secrets.AWS_ACCOUNT_ID }}.dkr.ecr.us-east-1.amazonaws.com/argonaut/pythontest:${{ steps.get_sha.outputs.SHA_SHORT }} --path ./ --builder heroku/buildpacks:18 
+          docker save ${{ secrets.AWS_ACCOUNT_ID }}.dkr.ecr.us-east-1.amazonaws.com/argonaut/pythontest:${{ steps.get_sha.outputs.SHA_SHORT }} > image.tar
+      - name: Upload artifacts
+        uses: actions/upload-artifact@v2
+        with:
+          name: image.tar
+          path: image.tar
+      
+      - name: Push to ecr
+        uses: argonautdev/aws-ecr-action@v4.1
+        id: push_to_ecr
+        with:
+          access_key_id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          secret_access_key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          account_id: ${{ secrets.AWS_ACCOUNT_ID }}
+          repo: argonaut/pythontest
+          region: us-east-1
+          tags: ${{ steps.get_sha.outputs.SHA_SHORT }}
+          create_repo: true
+          image_scanning_configuration: true
+          docker_image_path: image.tar
+
+  deploy:
+    
+    environment: 
+      name: dev1 
+    
+    runs-on: ubuntu-latest
+    name: Deploy to Argonaut
+    needs: build
+    steps:
+      - name: Fetch repo
+        uses: actions/checkout@v2
+      - name: Get Short SHA
+        id: get_sha
+        run: echo ::set-output name=SHA_SHORT::$(git rev-parse --short HEAD)
+      - name: Download art
+        run: curl --silent https://github.com/argonautdev/public/releases/latest/download/art-linux -L -o art
+      - name: Configure art
+        run: |
+          chmod +x ./art
+          sudo mv ./art /usr/local/bin/art
+          sudo art configure --key ${{ secrets.ART_KEY }} --secret ${{ secrets.ART_SECRET }}
+          sudo art app deploy -f .art/argonaut-dev1-pythontest.yaml --set image="${{ secrets.AWS_ACCOUNT_ID }}.dkr.ecr.us-east-1.amazonaws.com/argonaut/pythontest" --set 'labels.argonaut\.dev/git-provider'='github' --set argonaut.git-provider='github' --set imageTag="${{ steps.get_sha.outputs.SHA_SHORT }}"  --set appName="pythontest"  --set argonaut.env="dev1"  --set argonaut.region="us-east-1"  --set argonaut.cluster="dev1"  --set argonaut.serviceType="stateless"  --set argonaut.imageRegistry="ecr" 
+
